@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
@@ -34,8 +36,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 /**
  * @className:POIExcelUtil.java
  * @classDescription:POI操作类
- * @author:xiayingjie
- * @createTime:2010-10-29
  */
 
 public class POIExcelUtil {
@@ -462,102 +462,26 @@ public class POIExcelUtil {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		// 在需要换行的地方加上\n
-		// cell.setCellValue("Use \n with word wrap on to create a new line");
-		// 设置行高 row.setHeightInPoints((2*sheet.getDefaultRowHeightInPoints()));
-		// 设置列只适应宽度 sheet.autoSizeColumn((short)2);
-
-		//
-		// // -------------插入---------------------
-		// Workbook wb = POIUtil.createWorkbook();
-		// //创建Sheet
-		// Sheet s = wb.createSheet();
-		// s.autoSizeColumn(1);
-		// s.autoSizeColumn(0);
-		// s.autoSizeColumn(2);
-		// //创建样式（真实项目中-所有样式都写在这里）
-		// CellStyle style1=wb.createCellStyle();
-		// CellStyle style2=wb.createCellStyle();
-		// CellStyle style3=wb.createCellStyle();
-		// //字体
-		// //设置字体
-		// Font font=wb.createFont();
-		// CellStyle fontStyle
-		// =setFont(font,style3,(short)30,IndexedColors.RED.getIndex() ,
-		// "Courier New");
-		// //合并单元格
-		// //mergeCell(s,2,2,1,2);
-		// //创建行
-		// Row row1 = s.createRow(0);
-		// row1.setHeightInPoints((2*s.getDefaultRowHeightInPoints()));
-		// //-----------数字-----------
-		// Cell c1=createCell(style1, row1, (short) 0);
-		// c1.setCellValue(3.138);
-		// //设置边框
-		// setBorder(style1,CellStyle.BORDER_THIN,IndexedColors.GREEN.getIndex());
-		//
-		//
-		// //-------------日期----------------
-		// Cell c2=createCell(style2, row1, (short) 1);
-		// c2.setCellValue(Calendar.getInstance());
-		// CreationHelper ch=wb.getCreationHelper();
-		// setDataFormat(ch,style2,"m/d/yy h:mm");
-		// setBackColor(style2,IndexedColors.YELLOW.getIndex());
-		//
-		//
-		//
-		// Cell c4=createCell(style2, row1, (short) 2);
-		//
-		// //----------------字符串------------------
-		//
-		// //Cell c3=createCell(style3, row1, (short) 2);
-		// Cell c3=row1.createCell((short) 3);
-		// c3.setCellValue("我和你dfgd、\nfged二个如果");
-		// CellStyle cs=wb.createCellStyle();
-		//
-		// setBackColor(style3,IndexedColors.ORANGE.getIndex());
-		//
-		//
-		// c3.setCellStyle(style3);
-		// c3.setCellStyle(cs);
-		// 写入图片
-		// POIUtil.addPicture(wb, s,"F://aa.gif",
-		// Workbook.PICTURE_TYPE_JPEG,5,6);
-
-		// Footer footer = s.getFooter(); //页脚
-		//
-		// footer.setRight( "Page " + footer.getLeft() + " of " +
-		// footer.getRight());
-
-		// s.shiftRows(5, 10,-5); //把第6-11行向上移动5行
-		// s.setSelected(true); //选中sheet
-		//
-		// 打印
-		// PrintSetup ps = s.getPrintSetup();
-		//
-		// sheet.setAutobreaks(true);
-		//
-		// ps.setFitHeight((short)1);
-		// ps.setFitWidth((short)1);
-
-		// POIUtil.createExcel(wb, "F://text.xlsx");
-
-		// =====================读================
-		Workbook wb = readExcel("D://test.xls");
-		Workbook newWb = createWorkbook(false);
-		Sheet sheet;
 		Map<String, String> replaceTextMap = new HashMap<String, String>();
 		replaceTextMap.put("販売単価", "販売単価1");
 		replaceTextMap.put("TIS 應", "TIS 應1");
-		;
-		for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-			sheet = wb.getSheetAt(i);
-			replace(sheet, replaceTextMap);
+		
+		
+		String path = "D://test";
+		List<String> filesPathList = new ArrayList<String>();
+		traversal(filesPathList, path);
+		
+		for(String filePath : filesPathList){
+			Workbook wb = readExcel(filePath);
+			for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+				Sheet sheet = wb.getSheetAt(i);
+				replace(filePath, sheet, replaceTextMap);
+			}
+			String newPath = filePath.replace("D:\\test", "D:\\excelReplace");
+			log.info("filePath:" + filePath);
+			log.info("newPath:" + newPath);
+			createExcel(wb, newPath);
 		}
-
-		File f = new File("D://excelReplace");
-		f.mkdirs();
-		createExcel(wb, "D://excelReplace//test.xls");
 
 	}
 
@@ -569,14 +493,14 @@ public class POIExcelUtil {
 	 * @param replaceTextMap
 	 *            替换文本MAP key=原字符串 value=替换字符串
 	 */
-	private static void replace(Sheet sheet, Map<String, String> replaceTextMap) {
+	private static void replace(String filePath, Sheet sheet, Map<String, String> replaceTextMap) {
 		Iterator<Map.Entry<String, String>> iter = replaceTextMap.entrySet()
 				.iterator();
 		while (iter.hasNext()) {
 			Map.Entry<String, String> entry = iter.next();
 			String key = entry.getKey();
 			String value = entry.getValue();
-			replace(sheet, key, value);
+			replace(filePath, sheet, key, value);
 		}
 
 	}
@@ -591,7 +515,7 @@ public class POIExcelUtil {
 	 * @param value
 	 *            替换字符串
 	 */
-	private static void replace(Sheet sheet, String key, String value) {
+	private static void replace(String filePath, Sheet sheet, String key, String value) {
 		// 遍历所有行
 		for (Row row : sheet) {
 			// 便利所有列
@@ -610,7 +534,7 @@ public class POIExcelUtil {
 							targetText = targetText.replace(value, key);
 							targetText = targetText.replace(key, value);
 							cell.setCellValue(targetText);
-							log.info("Sheet[" + sheet.getSheetName() + "]"
+							log.info("filePath:" + filePath +" Sheet[" + sheet.getSheetName() + "]"
 									+ "行:" + (cell.getRowIndex() + 1) + "列:"
 									+ getColLetter(cell.getColumnIndex()) + " "
 									+ targetText + " replace " + key + " -> "
@@ -653,4 +577,25 @@ public class POIExcelUtil {
 					+ (char) ((colIndex) % 26 + 65);
 		return ch;
 	}
+	
+	/**
+	 * 遍历文件夹下的文件，并打印文件夹下文件的路径
+	 * @param directoryPath 文件夹目录
+	 */
+	public static void traversal(List<String> filesPathList, String directoryPath) {
+		File dir = new File(directoryPath);
+		File[] files = dir.listFiles();
+		if (files == null) {
+			return;
+		} else {
+			for (int i = 0; i < files.length; i++) {
+				if (files[i].isDirectory()) {
+					traversal(filesPathList, files[i].getAbsolutePath());
+				} else {
+					filesPathList.add(files[i].getAbsolutePath());
+				}
+			}
+		}
+	}
+
 }
